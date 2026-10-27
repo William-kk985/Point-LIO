@@ -50,10 +50,18 @@
             gravity_align: true # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
             gravity: [ 0.0, 0.0, -9.810 ] # [0.0, 9.810, 0.0] # gravity to be aligned
             gravity_init: [ 0.0, 0.0, -9.810 ] # [0.0, 9.810, 0.0] # # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
-            extrinsic_T: [ 0.0, 0.0, 0.05 ] # Simulation
+            extrinsic_T: [ 0.0, 0.0, 0.05 ] # Simulation：livox 原点在 IMU 系里沿共同 z 偏 5 cm
+            # ★ 2026-10-27（契约 §4.12.5 / measurements §35）：**本文件自己的默认值**
+            #   = robot11 仿真（唯一斜装槽位）的物理事实：点云在水平的 `livox_frame`、IMU 在
+            #   `imu_link` 里真的绕 x −30° ⇒ p_imu = R_IL·p_lidar + t_IL 里的
+            #   R_IL = Rx(+30°)（= 倾角矩阵的逆）。**不是**单位阵 —— 单位阵会静默丢掉 30°。
+            #   谁覆盖它：`bringup_sim.launch.py` 对**所有** robot 都会从 URDF 解析并覆盖
+            #   `mapping.extrinsic_R`（唯一真源是 URDF）⇒ 默认模型/hzmirm 在 launch 下仍是 I。
+            #   但**独立使用本 yaml**（直接 `ros2 run point_lio pointlio_mapping --params-file …`）
+            #   时不会走 launch 的解析 ⇒ 这里的默认值必须是真值，不能是 I。
             extrinsic_R: [1., 0., 0.,
-                          0., 1., 0.,
-                          0., 0., 1.]
+                          0., 0.8660254037844387, -0.5,       # cos30, -sin30
+                          0., 0.5, 0.8660254037844387]        # sin30,  cos30
 
         odometry:
             publish_odometry_without_downsample: false
